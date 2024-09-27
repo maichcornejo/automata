@@ -30,10 +30,15 @@ def submit_automata():
 
         errores = []
 
-        # Validación: Verificar que todos los destinos de las transiciones existan, si no son nulos o vacíos
+        # Validación: Verificar que todos los destinos de las transiciones existan y que no se repitan
         for estado, transiciones_estado in transiciones.items():
             for simbolo, destino in transiciones_estado.items():
+                # Verificar si destino es una lista (en caso de no determinismo)
                 if isinstance(destino, list):
+                    # Comprobar si hay duplicados en la lista de destinos
+                    if len(destino) != len(set(destino)):
+                        errores.append(f"El estado '{estado}' con el símbolo '{simbolo}' tiene estados destino duplicados: {', '.join(destino)}.")
+                    # Comprobar si los destinos existen en la lista de estados
                     for d in destino:
                         if d and d not in estados:  
                             errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
@@ -70,21 +75,11 @@ def convert_to_deterministic():
     tabla_transiciones = generar_tabla_transiciones(automata_deterministico)
     graficar_automata(automata_deterministico, deterministic=True)
 
-    # Devolver la tabla de transiciones y los gráficos (no determinístico y determinístico)
-    return f"""
-    <h3>Tabla de Transiciones Final (Determinístico)</h3>
-    {tabla_transiciones}
-    <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
-        <div>
-            <h3>Autómata No Determinístico</h3>
-            <img src='/static/automata_graph.png' alt='Gráfico del autómata no determinístico'>
-        </div>
-        <div>
-            <h3>Autómata Determinístico</h3>
-            <img src='/static/automata_graph_deterministic.png' alt='Gráfico del autómata determinístico'>
-        </div>
-    </div>
-    """
+    return jsonify({
+        'tabla': tabla_transiciones,
+        'mensaje': "El autómata ha sido convertido a determinístico.",
+        'deterministico': True
+    })
 
 
 def generar_tabla_transiciones(automata):

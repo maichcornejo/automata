@@ -141,19 +141,21 @@ function convertirADeterministico() {
     .then(data => {
         document.getElementById("resultados").innerHTML = data.tabla;
 
-        // Actualizar el gráfico para el autómata determinístico
+        // Mostrar el gráfico del autómata determinístico
         const grafico = document.createElement("img");
-        grafico.src = '/static/automata_graph.png?' + new Date().getTime(); 
+        grafico.src = '/static/automata_graph_deterministic.png?' + new Date().getTime(); 
         document.getElementById("resultados").appendChild(grafico);
 
-        // Ocultar el botón de conversión y el mensaje de determinismo
-        document.getElementById("mensaje_deterministico").style.display = "none";
+        // Actualizar el mensaje y ocultar el botón de conversión
+        document.getElementById("mensaje_deterministico").style.display = "block";
+        document.getElementById("mensaje").innerText = data.mensaje;
         document.getElementById("deterministic_button").style.display = "none";
 
-        // Mostrar la opción para validar cadena ahora que es determinístico
+        // Mostrar la opción para validar cadena
         document.getElementById("validacion_section").style.display = "block";
     })
     .catch(error => {
+        console.error("Error al convertir a determinístico:", error);
         alert("Error al convertir a determinístico: " + error.message);
     });
 }
