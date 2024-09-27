@@ -29,6 +29,23 @@ def submit_automata():
         estado_inicial = data['estado_inicial']
         estados_finales = data['estados_finales']
 
+        errores = []
+
+        # Validación: Verificar que todos los destinos de las transiciones existan, si no son nulos o vacíos
+        for estado, transiciones_estado in transiciones.items():
+            for simbolo, destino in transiciones_estado.items():
+                if isinstance(destino, list):
+                    for d in destino:
+                        if d and d not in estados:  # Verificar que no sea nulo o vacío, y que exista
+                            errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
+                else:
+                    if destino and destino not in estados:  # Verificar que no sea nulo o vacío, y que exista
+                        errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{destino}'.")
+
+        # Si hay errores, devolverlos
+        if errores:
+            return jsonify({'error': "\n".join(errores)}), 400
+
         # Crear una instancia de Automata (no determinístico)
         automata_global = Automata(estados, alfabeto, transiciones, estado_inicial, estados_finales)
 
@@ -52,6 +69,8 @@ def submit_automata():
         # Capturar cualquier error y devolver un mensaje
         print(f"Error en submit_automata: {e}")
         return jsonify({'error': f"Error al procesar el autómata: {e}"}), 500
+
+
 
 @app.route('/convert_to_deterministic', methods=['POST'])
 def convert_to_deterministic():

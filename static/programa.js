@@ -77,7 +77,7 @@ function enviarAutomata() {
         transiciones[estado][simbolo] = valor.split(',').map(v => v.trim());
     });
 
-    // Enviar los datos al backend si no hay errores
+    // Enviar los datos al backend
     fetch('/submit_automata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,7 +89,15 @@ function enviarAutomata() {
             transiciones: transiciones
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // Si el servidor devuelve un error (código 400), extraer el mensaje de error
+            return response.json().then(data => {
+                throw new Error(data.error);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         document.getElementById("resultados").innerHTML = data.tabla;
         document.getElementById("mensaje_deterministico").style.display = "block";
@@ -107,10 +115,11 @@ function enviarAutomata() {
         }
     })
     .catch(error => {
-        console.error("Error al procesar el JSON:", error);
-        alert("Ocurrió un error al procesar la respuesta del servidor.");
+        // Mostrar el mensaje de error en caso de que se produzca un error
+        alert("Error: " + error.message);
     });
 }
+
 
 function convertirADeterministico() {
     fetch('/convert_to_deterministic', {
