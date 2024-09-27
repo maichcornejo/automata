@@ -138,3 +138,24 @@ function convertirADeterministico() {
         alert("Ocurrió un error al convertir el autómata a determinístico.");
     });
 }
+
+function validarCadena() {
+    const cadena = document.getElementById("cadena").value.trim();
+
+    // Enviar la cadena al backend
+    fetch('/validar_cadena', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cadena: cadena })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Mostrar el resultado de la validación
+        document.getElementById("validacion_resultado").innerHTML = data.resultado;
+    })
+    .catch(error => {
+        console.error("Error al validar la cadena:", error);
+        alert("Ocurrió un error al validar la cadena.");
+    });
+}
+

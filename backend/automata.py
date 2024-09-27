@@ -109,3 +109,21 @@ class Automata:
             estado_inicial=estado_nombre_map[conjunto_inicial],
             estados_finales=nuevos_estados_finales_renombrados
         )
+    
+    def validar_cadena(self, cadena):
+        if not self.es_deterministico():
+            automata_deterministico = self.convertir_a_deterministico()
+            return automata_deterministico.validar_cadena(cadena)
+
+        estado_actual = self.estado_inicial
+        for simbolo in cadena:
+            if simbolo not in self.alfabeto:
+                return False  # El símbolo no está en el alfabeto
+            
+            siguiente_estado = self.obtener_transiciones(estado_actual, simbolo)
+            if siguiente_estado is None:
+                return False  # No hay transición definida para este símbolo
+            
+            estado_actual = siguiente_estado
+
+        return estado_actual in self.estados_finales

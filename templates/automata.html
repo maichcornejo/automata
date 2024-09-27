@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crear Autómata</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
+
 <body>
     <h1>Crear Autómata</h1>
-    
+
     <form id="automataForm">
         <label for="estados">Estados (separados por coma):</label>
         <input type="text" id="estados" name="estados" required><br><br>
@@ -42,5 +44,11 @@
     </div>
 
     <script src="/static/programa.js"></script>
+    <h2>Validar Cadena</h2>
+        <input type="text" id="cadena" placeholder="Ingrese una cadena">
+        <button onclick="validarCadena()">Validar Cadena</button>
+    <div id="validacion_resultado"></div>
+
 </body>
+
 </html>

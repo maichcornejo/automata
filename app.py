@@ -154,6 +154,28 @@ def graficar_automata(automata, deterministic=False):
     dot.render(f'static/{output_file}', format='png', cleanup=True)
 
 
+@app.route('/validar_cadena', methods=['POST'])
+def validar_cadena():
+    global automata_global
+    try:
+        # Obtener la cadena enviada desde el frontend
+        data = request.get_json()
+        cadena = data['cadena']
+
+        # Validar la cadena con el autómata actual
+        if automata_global:
+            es_valida = automata_global.validar_cadena(cadena)
+            resultado = "La cadena es aceptada." if es_valida else "La cadena no es aceptada."
+        else:
+            resultado = "El autómata no está definido."
+
+        # Enviar el resultado de la validación al frontend
+        return jsonify({ 'resultado': resultado })
+    except Exception as e:
+        print(f"Error al validar la cadena: {e}")
+        return jsonify({ 'error': f"Error al validar la cadena: {e}" }), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
