@@ -38,12 +38,12 @@ class Automata:
         
         # Mapa para los nombres de los nuevos estados determinísticos
         estado_nombre_map = {frozenset([estado]): estado for estado in self.estados}
-        nombre_actual = max([int(estado) for estado in self.estados]) + 1  # Continuar la numeración desde el mayor estado original
+        nombre_actual = 1  # Empezar con una numeración para los nuevos estados, independientemente de los nombres originales
 
         # El nuevo estado inicial es el conjunto del estado inicial
         conjunto_inicial = frozenset([self.estado_inicial])
         if conjunto_inicial not in estado_nombre_map:
-            estado_nombre_map[conjunto_inicial] = str(nombre_actual)
+            estado_nombre_map[conjunto_inicial] = f"Q{nombre_actual}"  # Generar nuevos nombres como 'Q1', 'Q2', etc.
             nombre_actual += 1
         nuevos_estados.append(conjunto_inicial)
         nuevas_transiciones[conjunto_inicial] = {}
@@ -70,7 +70,7 @@ class Automata:
                 if nuevos_destinos:
                     nuevo_estado = frozenset(nuevos_destinos)
                     if nuevo_estado not in estado_nombre_map:
-                        estado_nombre_map[nuevo_estado] = str(nombre_actual)
+                        estado_nombre_map[nuevo_estado] = f"Q{nombre_actual}"  # Generar nuevo nombre de estado
                         nombre_actual += 1
 
                     nuevas_transiciones[estado_actual][simbolo] = nuevo_estado
@@ -83,7 +83,7 @@ class Automata:
                     if nuevo_estado.intersection(set(self.estados_finales)):
                         nuevos_estados_finales.add(nuevo_estado)
 
-        # Renombrar transiciones, incluyendo las que no tienen destinos (se asignan a '-')
+        # Renombrar transiciones, evitando agregar estados vacíos
         nuevas_transiciones_renombradas = {}
         for estado, trans in nuevas_transiciones.items():
             estado_nuevo = estado_nombre_map[estado]
@@ -92,22 +92,9 @@ class Automata:
                 destino = trans.get(simbolo)
                 if destino:
                     nuevas_transiciones_renombradas[estado_nuevo][simbolo] = estado_nombre_map[destino]
-                else:
-                    nuevas_transiciones_renombradas[estado_nuevo][simbolo] = '-'
-
-        # Asegurarse de que todos los estados están incluidos en las transiciones
-        for estado in nuevos_estados:
-            estado_nuevo = estado_nombre_map[estado]
-            if estado_nuevo not in nuevas_transiciones_renombradas:
-                nuevas_transiciones_renombradas[estado_nuevo] = {simbolo: '-' for simbolo in self.alfabeto}
 
         nuevos_estados_renombrados = list(nuevas_transiciones_renombradas.keys())
         nuevos_estados_finales_renombrados = [estado_nombre_map[estado] for estado in nuevos_estados_finales]
-
-        # Depuración para verificar los estados creados
-        print("Nuevos estados renombrados:", nuevos_estados_renombrados)
-        print("Transiciones renombradas:", nuevas_transiciones_renombradas)
-        print("Estados finales renombrados:", nuevos_estados_finales_renombrados)
 
         # Devolver el nuevo autómata determinístico con estados renombrados
         return Automata(

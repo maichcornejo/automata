@@ -71,7 +71,6 @@ def submit_automata():
         return jsonify({'error': f"Error al procesar el autómata: {e}"}), 500
 
 
-
 @app.route('/convert_to_deterministic', methods=['POST'])
 def convert_to_deterministic():
     global automata_global
@@ -101,6 +100,7 @@ def convert_to_deterministic():
     </div>
     """
 
+
 def generar_tabla_transiciones(automata):
     tabla_html = "<table border='1'><tr><th>Estado</th>"
     for simbolo in automata.alfabeto:
@@ -119,6 +119,7 @@ def generar_tabla_transiciones(automata):
     tabla_html += "</table>"
     return tabla_html
 
+
 def graficar_automata(automata, deterministic=False):
     dot = graphviz.Digraph(comment="Autómata")
     dot.attr(size="6,6!", rankdir='LR', center='true')
@@ -136,17 +137,23 @@ def graficar_automata(automata, deterministic=False):
     dot.node('', shape='none')
     dot.edge('', estado_inicial_str)
 
-    # Añadir las transiciones
+    # Añadir las transiciones, solo si hay un destino válido
     for estado, transiciones_estado in automata.transiciones.items():
         estado_str = estado
         for simbolo, destino in transiciones_estado.items():
-            if destino and destino != "-" and destino != "":
-                destino_str = ','.join(destino) if isinstance(destino, list) else destino
-                dot.edge(estado_str, destino_str, label=simbolo)
+            # Verificar si el destino es válido (ni vacío, ni nulo, ni "-")
+            if isinstance(destino, list):
+                for d in destino:
+                    if d and d != "-":  # Filtrar destinos válidos en la lista
+                        dot.edge(estado_str, d, label=simbolo)  # Dibujar una transición por cada destino
+            elif isinstance(destino, str) and destino.strip():  # Si es cadena y no está vacía
+                dot.edge(estado_str, destino, label=simbolo)
 
     # Guardar el gráfico como PNG
     output_file = 'automata_graph_deterministic' if deterministic else 'automata_graph'
     dot.render(f'static/{output_file}', format='png', cleanup=True)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
