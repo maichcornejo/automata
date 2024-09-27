@@ -20,9 +20,8 @@ def submit_automata():
     global automata_global
 
     try:
-        # Recibir los datos enviados desde el frontend
+        # Recibe los datos desde el frontend
         data = request.get_json()
-
         estados = data['estados']
         alfabeto = data['alfabeto']
         transiciones = data['transiciones']
@@ -36,26 +35,19 @@ def submit_automata():
             for simbolo, destino in transiciones_estado.items():
                 if isinstance(destino, list):
                     for d in destino:
-                        if d and d not in estados:  # Verificar que no sea nulo o vacío, y que exista
+                        if d and d not in estados:  
                             errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
                 else:
-                    if destino and destino not in estados:  # Verificar que no sea nulo o vacío, y que exista
+                    if destino and destino not in estados:  
                         errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{destino}'.")
 
-        # Si hay errores, devolverlos
         if errores:
             return jsonify({'error': "\n".join(errores)}), 400
 
-        # Crear una instancia de Automata (no determinístico)
+        # Crea una instancia de Automata (no determinístico)
         automata_global = Automata(estados, alfabeto, transiciones, estado_inicial, estados_finales)
-
-        # Verificar si es determinístico
         deterministico = automata_global.es_deterministico()
-
-        # Generar la tabla de transiciones
         tabla_transiciones = generar_tabla_transiciones(automata_global)
-
-        # Graficar el autómata no determinístico
         graficar_automata(automata_global, deterministic=False)
 
         # Enviar respuesta JSON con el mensaje de si es determinístico
@@ -74,14 +66,8 @@ def submit_automata():
 @app.route('/convert_to_deterministic', methods=['POST'])
 def convert_to_deterministic():
     global automata_global
-
-    # Convertir el autómata a determinístico
     automata_deterministico = automata_global.convertir_a_deterministico()
-
-    # Generar la tabla de transiciones determinística
     tabla_transiciones = generar_tabla_transiciones(automata_deterministico)
-
-    # Graficar el autómata determinístico
     graficar_automata(automata_deterministico, deterministic=True)
 
     # Devolver la tabla de transiciones y los gráficos (no determinístico y determinístico)
@@ -144,9 +130,9 @@ def graficar_automata(automata, deterministic=False):
             # Verificar si el destino es válido (ni vacío, ni nulo, ni "-")
             if isinstance(destino, list):
                 for d in destino:
-                    if d and d != "-":  # Filtrar destinos válidos en la lista
-                        dot.edge(estado_str, d, label=simbolo)  # Dibujar una transición por cada destino
-            elif isinstance(destino, str) and destino.strip():  # Si es cadena y no está vacía
+                    if d and d != "-": 
+                        dot.edge(estado_str, d, label=simbolo)  # Dibuja una transición por cada destino
+            elif isinstance(destino, str) and destino.strip():  
                 dot.edge(estado_str, destino, label=simbolo)
 
     # Guardar el gráfico como PNG
@@ -174,8 +160,6 @@ def validar_cadena():
     except Exception as e:
         print(f"Error al validar la cadena: {e}")
         return jsonify({ 'error': f"Error al validar la cadena: {e}" }), 500
-
-
-
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

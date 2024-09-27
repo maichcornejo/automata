@@ -68,7 +68,6 @@ function generarTablaTransiciones() {
     document.getElementById("transiciones_container").style.display = "block";
 }
 
-
 function enviarAutomata() {
     const form = document.getElementById("automataForm");
     const formData = new FormData(form);
@@ -104,7 +103,6 @@ function enviarAutomata() {
     })
     .then(response => {
         if (!response.ok) {
-            // Si el servidor devuelve un error (código 400), extraer el mensaje de error
             return response.json().then(data => {
                 throw new Error(data.error);
             });
@@ -113,52 +111,55 @@ function enviarAutomata() {
     })
     .then(data => {
         document.getElementById("resultados").innerHTML = data.tabla;
-        document.getElementById("mensaje_deterministico").style.display = "block";
-        document.getElementById("mensaje").innerText = data.mensaje;
 
-        // Mostrar el gráfico del autómata no determinístico
+        // Mostrar el gráfico del autómata
         const grafico = document.createElement("img");
         grafico.src = '/static/automata_graph.png?' + new Date().getTime(); // Forzar la recarga del gráfico
         document.getElementById("resultados").appendChild(grafico);
 
-        if (!data.deterministico) {
-            document.getElementById("deterministic_button").style.display = "block";  // Mostrar el botón para convertir
-        } else {
-            document.getElementById("deterministic_button").style.display = "none";   // Ocultar el botón si es determinístico
-        }
+        // Mostrar si es determinístico o no
+        const esDeterministico = data.deterministico;
+        document.getElementById("mensaje_deterministico").style.display = "block";
+        document.getElementById("mensaje").innerText = esDeterministico 
+            ? "El autómata es determinístico." 
+            : "El autómata NO es determinístico.";
+
+        // Mostrar u ocultar el botón de conversión y la sección de validación según si es determinístico o no
+        document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
+        document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
     })
     .catch(error => {
-        // Mostrar el mensaje de error en caso de que se produzca un error
         alert("Error: " + error.message);
     });
 }
-
 
 function convertirADeterministico() {
     fetch('/convert_to_deterministic', {
         method: 'POST'
     })
-    .then(response => response.text())
+    .then(response => response.json())
     .then(data => {
-        document.getElementById("resultados").innerHTML = data;
+        document.getElementById("resultados").innerHTML = data.tabla;
 
-        // Ocultar el mensaje y el botón después de la conversión
+        // Actualizar el gráfico para el autómata determinístico
+        const grafico = document.createElement("img");
+        grafico.src = '/static/automata_graph.png?' + new Date().getTime(); 
+        document.getElementById("resultados").appendChild(grafico);
+
+        // Ocultar el botón de conversión y el mensaje de determinismo
         document.getElementById("mensaje_deterministico").style.display = "none";
         document.getElementById("deterministic_button").style.display = "none";
 
-        // Mostrar la sección de validar cadena
+        // Mostrar la opción para validar cadena ahora que es determinístico
         document.getElementById("validacion_section").style.display = "block";
     })
     .catch(error => {
-        console.error("Error al convertir a determinístico:", error);
-        alert("Ocurrió un error al convertir el autómata a determinístico.");
+        alert("Error al convertir a determinístico: " + error.message);
     });
 }
 
-
 function validarCadena() {
     const cadena = document.getElementById("cadena").value.trim();
-
     // Enviar la cadena al backend
     fetch('/validar_cadena', {
         method: 'POST',
@@ -167,7 +168,6 @@ function validarCadena() {
     })
     .then(response => response.json())
     .then(data => {
-        // Mostrar el resultado de la validación
         document.getElementById("validacion_resultado").innerHTML = data.resultado;
     })
     .catch(error => {
@@ -175,4 +175,3 @@ function validarCadena() {
         alert("Ocurrió un error al validar la cadena.");
     });
 }
-

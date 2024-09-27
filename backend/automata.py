@@ -118,11 +118,11 @@ class Automata:
         estado_actual = self.estado_inicial
         for simbolo in cadena:
             if simbolo not in self.alfabeto:
-                return False  # El símbolo no está en el alfabeto
+                return False  
             
             siguiente_estado = self.obtener_transiciones(estado_actual, simbolo)
             if siguiente_estado is None:
-                return False  # No hay transición definida para este símbolo
+                return False   
             
             estado_actual = siguiente_estado
 
