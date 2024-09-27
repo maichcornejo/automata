@@ -25,6 +25,7 @@
         <input type="text" id="estados_finales" name="estados_finales" required><br><br>
 
         <input type="button" value="Cargar Transiciones" onclick="generarTablaTransiciones()">
+        <input type="button" value="Resetear" onclick="resetearFormulario()">
     </form>
 
     <div id="transiciones_container" style="display:none;">
@@ -44,10 +45,12 @@
     </div>
 
     <script src="/static/programa.js"></script>
-    <h2>Validar Cadena</h2>
+    <div id="validacion_section" style="display:none;">
+        <h2>Validar Cadena</h2>
         <input type="text" id="cadena" placeholder="Ingrese una cadena">
         <button onclick="validarCadena()">Validar Cadena</button>
-    <div id="validacion_resultado"></div>
+        <div id="validacion_resultado"></div>
+    </div>
 
 </body>
 

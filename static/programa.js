@@ -1,4 +1,22 @@
+function resetearFormulario() {
+    // Reiniciar el formulario
+    document.getElementById("automataForm").reset();
+    
+    // Ocultar secciones de transiciones, resultados y validación
+    document.getElementById("transiciones_container").style.display = "none";
+    document.getElementById("resultados").innerHTML = "";
+    document.getElementById("mensaje_deterministico").style.display = "none";
+    document.getElementById("deterministic_button").style.display = "none";
+    document.getElementById("validacion_section").style.display = "none";
+}
+
 function generarTablaTransiciones() {
+    // Borrar resultados previos antes de generar nueva tabla
+    document.getElementById("resultados").innerHTML = "";
+    document.getElementById("mensaje_deterministico").style.display = "none";
+    document.getElementById("deterministic_button").style.display = "none";
+    document.getElementById("validacion_section").style.display = "none";
+    
     const estados = document.getElementById("estados").value.split(',').map(e => e.trim());
     const alfabeto = document.getElementById("alfabeto").value.split(',').map(e => e.trim());
     const estado_inicial = document.getElementById("estado_inicial").value.trim();
@@ -6,37 +24,32 @@ function generarTablaTransiciones() {
 
     let errores = [];
 
-    // Validación: No permitir estados duplicados
+    // Validaciones (mismas que antes)
     const estados_unicos = new Set(estados);
     if (estados_unicos.size !== estados.length) {
         errores.push("No se permiten estados duplicados.");
     }
 
-    // Validación: No permitir símbolos duplicados en el alfabeto
     const alfabeto_unico = new Set(alfabeto);
     if (alfabeto_unico.size !== alfabeto.length) {
         errores.push("No se permiten símbolos duplicados en el alfabeto.");
     }
 
-    // Validación: Estado inicial debe pertenecer a los estados ingresados
     if (!estados_unicos.has(estado_inicial)) {
         errores.push("El estado inicial debe pertenecer a los estados ingresados.");
     }
 
-    // Validación: Estados aceptadores deben pertenecer a los estados ingresados
     estados_finales.forEach(estado => {
         if (!estados_unicos.has(estado)) {
             errores.push(`El estado aceptador '${estado}' no pertenece a los estados ingresados.`);
         }
     });
 
-    // Si hay errores, mostrar el mensaje de error y no generar la tabla de transiciones
     if (errores.length > 0) {
         alert("Errores:\n" + errores.join("\n"));
-        return; // Detener aquí si hay errores
+        return;
     }
 
-    // Si no hay errores, generar la tabla de transiciones
     let tablaHtml = "<tr><th>Estado</th>";
     alfabeto.forEach(simbolo => {
         tablaHtml += `<th>Transición (${simbolo})</th>`;
@@ -128,16 +141,20 @@ function convertirADeterministico() {
     .then(response => response.text())
     .then(data => {
         document.getElementById("resultados").innerHTML = data;
-        
+
         // Ocultar el mensaje y el botón después de la conversión
         document.getElementById("mensaje_deterministico").style.display = "none";
         document.getElementById("deterministic_button").style.display = "none";
+
+        // Mostrar la sección de validar cadena
+        document.getElementById("validacion_section").style.display = "block";
     })
     .catch(error => {
         console.error("Error al convertir a determinístico:", error);
         alert("Ocurrió un error al convertir el autómata a determinístico.");
     });
 }
+
 
 function validarCadena() {
     const cadena = document.getElementById("cadena").value.trim();
