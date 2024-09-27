@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Autómata</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Crear Autómata</h1>
+    
+    <form id="automataForm">
+        <label for="estados">Estados (separados por coma):</label>
+        <input type="text" id="estados" name="estados" required><br><br>
+
+        <label for="alfabeto">Alfabeto (separados por coma):</label>
+        <input type="text" id="alfabeto" name="alfabeto" required><br><br>
+
+        <label for="estado_inicial">Estado Inicial:</label>
+        <input type="text" id="estado_inicial" name="estado_inicial" required><br><br>
+
+        <label for="estados_finales">Estados Finales (separados por coma):</label>
+        <input type="text" id="estados_finales" name="estados_finales" required><br><br>
+
+        <input type="button" value="Cargar Transiciones" onclick="generarTablaTransiciones()">
+    </form>
+
+    <div id="transiciones_container" style="display:none;">
+        <h2>Ingresar Transiciones</h2>
+        <table id="tablaTransiciones"></table>
+        <br>
+        <input type="button" value="Enviar Automata" onclick="enviarAutomata()">
+    </div>
+
+    <div id="resultados"></div>
+
+    <div id="mensaje_deterministico" style="display:none;">
+        <p id="mensaje"></p>
+        <div id="deterministic_button" style="display:none;">
+            <input type="button" value="Convertir a Determinístico" onclick="convertirADeterministico()">
+        </div>
+    </div>
+
+    <script src="/static/programa.js"></script>
+</body>
+</html>

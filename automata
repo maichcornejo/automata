@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Nombre de la imagen y contenedor
+IMAGE_NAME="automata_web"
+CONTAINER_NAME="automata_container"
+PORT="5000"
+
+case "$1" in
+    up)
+        echo "Levantando el contenedor..."
+        docker build -t $IMAGE_NAME .
+        docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
+        echo "Contenedor levantado en http://localhost:$PORT"
+        ;;
+    
+    down)
+        echo "Deteniendo y eliminando el contenedor..."
+        docker stop $CONTAINER_NAME
+        docker rm $CONTAINER_NAME
+        echo "Contenedor detenido y eliminado."
+        ;;
+    
+    restart)
+        echo "Reiniciando el contenedor..."
+        docker stop $CONTAINER_NAME
+        docker rm $CONTAINER_NAME
+        docker build -t $IMAGE_NAME .
+        docker run -d --name $CONTAINER_NAME -p $PORT:$PORT $IMAGE_NAME
+        echo "Contenedor reiniciado en http://localhost:$PORT"
+        ;;
+
+    logs)
+        echo "Mostrando los logs del contenedor..."
+        docker logs -f $CONTAINER_NAME
+        ;;
+    
+    *)
+        echo "Uso: automata {up|down|restart|logs}"
+        exit 1
+        ;;
+esac
