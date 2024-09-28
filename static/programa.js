@@ -114,17 +114,15 @@ function enviarAutomata() {
 
         // Mostrar el gráfico del autómata
         const grafico = document.createElement("img");
-        grafico.src = '/static/automata_graph.png?' + new Date().getTime(); // Forzar la recarga del gráfico
+        grafico.src = '/static/automata_graph.png?' + new Date().getTime(); 
         document.getElementById("resultados").appendChild(grafico);
 
-        // Mostrar si es determinístico o no
         const esDeterministico = data.deterministico;
         document.getElementById("mensaje_deterministico").style.display = "block";
         document.getElementById("mensaje").innerText = esDeterministico 
             ? "El autómata es determinístico." 
             : "El autómata NO es determinístico.";
 
-        // Mostrar u ocultar el botón de conversión y la sección de validación según si es determinístico o no
         document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
         document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
     })
@@ -162,18 +160,29 @@ function convertirADeterministico() {
 
 function validarCadena() {
     const cadena = document.getElementById("cadena").value.trim();
-    // Enviar la cadena al backend
+    
     fetch('/validar_cadena', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cadena: cadena })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
-        document.getElementById("validacion_resultado").innerHTML = data.resultado;
+        if (data.resultado) {
+            document.getElementById("validacion_resultado").innerText = data.resultado;
+        } else {
+            document.getElementById("validacion_resultado").innerText = "No se obtuvo respuesta de la validación.";
+        }
     })
     .catch(error => {
         console.error("Error al validar la cadena:", error);
-        alert("Ocurrió un error al validar la cadena.");
+        document.getElementById("validacion_resultado").innerText = "Error al validar la cadena: " + error.message;
     });
 }

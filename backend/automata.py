@@ -16,32 +16,78 @@ class Automata:
     def obtener_transiciones(self, estado, simbolo):
         if estado in self.transiciones and simbolo in self.transiciones[estado]:
             return self.transiciones[estado][simbolo]
-        return None
+        return None  # Claramente devuelve None cuando no hay transición
+
+    def validar_cadena(self, cadena):
+        if self.es_deterministico():
+            return self._validar_cadena_deterministico(cadena)
+        else:
+            return self._validar_cadena_no_deterministico(cadena)
+
+    def _validar_cadena_deterministico(self, cadena):
+        estado_actual = self.estado_inicial
+        for simbolo in cadena:
+            if simbolo not in self.alfabeto:
+                return False
+            transicion = self.obtener_transiciones(estado_actual, simbolo)
+            if not isinstance(transicion, str):  # Asegurar que sea una transición válida
+                return False
+            estado_actual = transicion
+        return estado_actual in self.estados_finales
+
+    def _validar_cadena_no_deterministico(self, cadena):
+        def validar_recursivo(estado, cadena_restante):
+            if not cadena_restante:
+                return estado in self.estados_finales
+
+            simbolo = cadena_restante[0]
+            if simbolo not in self.alfabeto:
+                return False
+
+            transiciones = self.obtener_transiciones(estado, simbolo)
+            if transiciones is None:
+                return False
+
+            if not isinstance(transiciones, list):
+                transiciones = [transiciones]
+
+            return any(validar_recursivo(siguiente_estado, cadena_restante[1:])
+                       for siguiente_estado in transiciones)
+
+        return validar_recursivo(self.estado_inicial, cadena)
 
     def convertir_a_deterministico(self):
-        nuevos_estados = []
-        nuevas_transiciones = {}
-        nuevos_estados_finales = set()
-        
-        estado_nombre_map = {frozenset([estado]): estado for estado in self.estados}
-        nombre_actual = 1
+        nuevos_estados = []  # Lista de conjuntos de estados (en determinístico)
+        nuevas_transiciones = {}  # Transiciones del nuevo automata determinístico
+        nuevos_estados_finales = set()  # Conjunto de estados finales
+        estado_nombre_map = {}  # Mapeo de nombres de los nuevos estados
+        nombre_actual = len(self.estados)  # Empezar la numeración desde el último estado original
 
+        def obtener_nombre_estado(conjunto):
+            conjunto_ordenado = frozenset(sorted(conjunto))
+            if conjunto_ordenado not in estado_nombre_map:
+                nonlocal nombre_actual
+                nombre_actual += 1
+                estado_nombre_map[conjunto_ordenado] = f"Q{nombre_actual}"
+            return estado_nombre_map[conjunto_ordenado]
+
+        # Estado inicial es el conjunto del estado inicial original
         conjunto_inicial = frozenset([self.estado_inicial])
-        if conjunto_inicial not in estado_nombre_map:
-            estado_nombre_map[conjunto_inicial] = f"Q{nombre_actual}"
-            nombre_actual += 1
+        obtener_nombre_estado(conjunto_inicial)
         nuevos_estados.append(conjunto_inicial)
-        nuevas_transiciones[conjunto_inicial] = {}
 
+        # Procesar el conjunto inicial
         por_procesar = [conjunto_inicial]
 
         while por_procesar:
-            estado_actual = por_procesar.pop()
-            nuevas_transiciones[estado_actual] = {}
+            estado_actual = por_procesar.pop(0)  # Procesar el primer estado en la lista
+            nombre_estado_actual = obtener_nombre_estado(estado_actual)
+            nuevas_transiciones[nombre_estado_actual] = {}
 
             for simbolo in self.alfabeto:
                 nuevos_destinos = set()
 
+                # Combinar las transiciones de todos los estados del conjunto actual
                 for estado in estado_actual:
                     if simbolo in self.transiciones.get(estado, {}):
                         destinos = self.transiciones[estado][simbolo]
@@ -52,78 +98,26 @@ class Automata:
 
                 if nuevos_destinos:
                     nuevo_estado = frozenset(nuevos_destinos)
-                    if nuevo_estado not in estado_nombre_map:
-                        estado_nombre_map[nuevo_estado] = f"Q{nombre_actual}"
-                        nombre_actual += 1
+                    nombre_nuevo_estado = obtener_nombre_estado(nuevo_estado)
 
-                    nuevas_transiciones[estado_actual][simbolo] = nuevo_estado
+                    # Asignar la transición al nuevo estado
+                    nuevas_transiciones[nombre_estado_actual][simbolo] = nombre_nuevo_estado
 
                     if nuevo_estado not in nuevos_estados:
                         nuevos_estados.append(nuevo_estado)
                         por_procesar.append(nuevo_estado)
 
-                    if nuevo_estado.intersection(set(self.estados_finales)):
-                        nuevos_estados_finales.add(nuevo_estado)
+                    # Si el conjunto de nuevos estados contiene algún estado final, marcarlo como final
+                    if nuevo_estado.intersection(self.estados_finales):
+                        nuevos_estados_finales.add(nombre_nuevo_estado)
 
-        # Eliminar estados de error y bucles de error compuestos
-        estados_a_eliminar = set()
-        for estado in nuevos_estados:
-            if estado not in nuevos_estados_finales:
-                transiciones = nuevas_transiciones.get(estado, {})
-                if all(destino == estado for destino in transiciones.values()):
-                    estados_a_eliminar.add(estado)
-                elif all(destino in estados_a_eliminar or destino == estado for destino in transiciones.values()):
-                    estados_a_eliminar.add(estado)
-
-        # Eliminar estados sin transiciones salientes
-        for estado in nuevos_estados:
-            if not nuevas_transiciones.get(estado, {}):
-                estados_a_eliminar.add(estado)
-
-        # Eliminar los estados marcados
-        for estado in estados_a_eliminar:
-            if estado in nuevos_estados:
-                nuevos_estados.remove(estado)
-            if estado in nuevas_transiciones:
-                nuevas_transiciones.pop(estado)
-            for _, transiciones in nuevas_transiciones.items():
-                for simbolo in list(transiciones.keys()):
-                    if transiciones[simbolo] == estado:
-                        transiciones.pop(simbolo)
-
-        # Renombrar transiciones
-        nuevas_transiciones_renombradas = {}
-        for estado, trans in nuevas_transiciones.items():
-            estado_nuevo = estado_nombre_map[estado]
-            nuevas_transiciones_renombradas[estado_nuevo] = {}
-            for simbolo, destino in trans.items():
-                nuevas_transiciones_renombradas[estado_nuevo][simbolo] = estado_nombre_map[destino]
-
-        nuevos_estados_renombrados = list(nuevas_transiciones_renombradas.keys())
-        nuevos_estados_finales_renombrados = [estado_nombre_map[estado] for estado in nuevos_estados_finales if estado not in estados_a_eliminar]
+        # Obtener la lista de estados renombrados
+        nuevos_estados_renombrados = list(estado_nombre_map.values())
 
         return Automata(
             estados=nuevos_estados_renombrados,
             alfabeto=self.alfabeto,
-            transiciones=nuevas_transiciones_renombradas,
-            estado_inicial=estado_nombre_map[conjunto_inicial],
-            estados_finales=nuevos_estados_finales_renombrados
+            transiciones=nuevas_transiciones,
+            estado_inicial=obtener_nombre_estado(conjunto_inicial),
+            estados_finales=list(nuevos_estados_finales)
         )
-    
-    def validar_cadena(self, cadena):
-        if not self.es_deterministico():
-            automata_deterministico = self.convertir_a_deterministico()
-            return automata_deterministico.validar_cadena(cadena)
-
-        estado_actual = self.estado_inicial
-        for simbolo in cadena:
-            if simbolo not in self.alfabeto:
-                return False  
-            
-            siguiente_estado = self.obtener_transiciones(estado_actual, simbolo)
-            if siguiente_estado is None:
-                return False   
-            
-            estado_actual = siguiente_estado
-
-        return estado_actual in self.estados_finales

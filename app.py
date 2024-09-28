@@ -38,7 +38,6 @@ def submit_automata():
                     # Comprobar si hay duplicados en la lista de destinos
                     if len(destino) != len(set(destino)):
                         errores.append(f"El estado '{estado}' con el símbolo '{simbolo}' tiene estados destino duplicados: {', '.join(destino)}.")
-                    # Comprobar si los destinos existen en la lista de estados
                     for d in destino:
                         if d and d not in estados:  
                             errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
