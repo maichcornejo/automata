@@ -1,6 +1,7 @@
 function resetearFormulario() {
-    // Reiniciar el formulario
     document.getElementById("automataForm").reset();
+
+    // Ocultar secciones de transiciones, resultados y validación
     document.getElementById("transiciones_container").style.display = "none";
     document.getElementById("resultados").innerHTML = "";
     document.getElementById("mensaje_deterministico").style.display = "none";
@@ -86,11 +87,11 @@ function enviarAutomata() {
         }
 
         if (valor === '' || valor === '-') {
-            transiciones[estado][simbolo] = null; // Transiciones inexistentes
+            transiciones[estado][simbolo] = []; // Representar transiciones inexistentes como listas vacías
         } else {
-            // Mantengo transiciones como lista si son múltiples, o como cadena si es única
+            // Mantener transiciones como lista si son múltiples, o como cadena si es única
             const destinos = valor.split(',').map(v => v.trim()).filter(v => v !== '');
-            transiciones[estado][simbolo] = destinos.length > 1 ? destinos : destinos[0];
+            transiciones[estado][simbolo] = destinos.length > 1 ? destinos : destinos;
         }
     });
 
@@ -115,32 +116,33 @@ function enviarAutomata() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Tabla transiciones
+                // Mostrar la tabla de transiciones y grafico
                 document.getElementById("resultados").innerHTML = data.tabla;
-
-                // Grafico del automata
                 const grafico = document.createElement("img");
-                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                grafico.src = data.png_path + '?' + new Date().getTime();  
                 document.getElementById("resultados").appendChild(grafico);
             } else {
                 console.error("Tabla o ruta del PNG no recibida.");
             }
 
-            // Mensaje deterministico o no
+            // Mostrar el mensaje de si es determinístico o no
             const esDeterministico = data.deterministico;
             document.getElementById("mensaje_deterministico").style.display = "block";
             document.getElementById("mensaje").innerText = esDeterministico
                 ? "El autómata es determinístico."
                 : "El autómata NO es determinístico.";
+
+            // Mostrar/ocultar el botón de conversión
             document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
 
+            // Mostrar el botón para eliminar estados de error si no es determinístico
             if (!esDeterministico) {
                 document.getElementById("eliminar_error_button").style.display = "block";
             } else {
                 document.getElementById("eliminar_error_button").style.display = "none";
             }
 
-            // Muestra la validacion de cadenas solo cuando es deterministico
+            // Mostrar la sección de validación solo si es determinístico
             document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
         })
         .catch(error => {
@@ -149,7 +151,7 @@ function enviarAutomata() {
 }
 
 function convertirADeterministico() {
-    fetch('/convert_to_deterministic', {
+    fetch('/contertir_en_deterministico', {
         method: 'POST'
     })
         .then(response => {
@@ -162,23 +164,20 @@ function convertirADeterministico() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Tabla transiciones
+                // Mostrar tabla y grafico
                 document.getElementById("resultados").innerHTML = data.tabla;
-
-                // Grafico auto. deterministico
                 const grafico = document.createElement("img");
-                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                grafico.src = data.png_path + '?' + new Date().getTime();  
                 document.getElementById("resultados").appendChild(grafico);
             } else {
                 console.error("Tabla o ruta del PNG no recibida.");
             }
 
+            // Mostrar el mensaje de conversión
             document.getElementById("mensaje_deterministico").style.display = "block";
             document.getElementById("mensaje").innerText = data.mensaje;
             document.getElementById("deterministic_button").style.display = "none";
-
             document.getElementById("eliminar_error_button").style.display = "none";
-
             document.getElementById("validacion_section").style.display = "block";
         })
         .catch(error => {
@@ -201,10 +200,8 @@ function eliminarEstadosError() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Transiciones actualizadas
+                //Tabla de transiciones y grafico actualizados
                 document.getElementById("resultados").innerHTML = data.tabla;
-
-                // Automata actualizado
                 const grafico = document.createElement("img");
                 grafico.src = data.png_path + '?' + new Date().getTime();  
                 document.getElementById("resultados").appendChild(grafico);

@@ -63,36 +63,37 @@ class Automata:
         """
         estados_a_eliminar = set()
 
-        # Busqueda de cierre para encontrar los estados de error
+        # Identificar estados de error utilizando búsqueda de cierre
         for estado in self.estados.copy():
             if estado not in self.estados_finales:
-                if not self.puede_encontrar_final(estado):
+                if not self.puede_reach_final(estado):
                     estados_a_eliminar.add(estado)
 
         if not estados_a_eliminar:
             return []
 
-        # Aca se eliminan los estados de error
+        # Eliminar los estados de error
         for estado in estados_a_eliminar:
             self.estados.remove(estado)
             del self.transiciones[estado]
 
-        # Elimina transiciones hacia los E.E
+        # Eliminar transiciones hacia los estados eliminados
         for est, trans in self.transiciones.items():
             for simbolo in list(trans.keys()):
-                destino = trans[simbolo]
-                if isinstance(destino, list):
-                    trans[simbolo] = [d for d in destino if d not in estados_a_eliminar]
-                    # Si la lista queda vacía se elimina la transicion
+                destinos = trans[simbolo]
+                if isinstance(destinos, list):
+                    # Filtrar los destinos que han sido eliminados
+                    trans[simbolo] = [d for d in destinos if d not in estados_a_eliminar]
+                    # Si la lista queda vacía, eliminar la transición
                     if not trans[simbolo]:
                         del trans[simbolo]
                 else:
-                    if destino in estados_a_eliminar:
+                    if destinos in estados_a_eliminar:
                         del trans[simbolo]
 
         return list(estados_a_eliminar)
 
-    def puede_encontrar_final(self, estado):
+    def puede_reach_final(self, estado):
         """
         Verifica si desde el estado dado es posible alcanzar algún estado final.
         Utiliza una búsqueda en profundidad (DFS).
@@ -119,6 +120,7 @@ class Automata:
                         stack.append(destinos)
 
         return False
+
 
     def convertir_a_deterministico(self):
         nuevos_estados = []
