@@ -57,29 +57,35 @@ class Automata:
         return validar_recursivo(self.estado_inicial, cadena)
 
     def eliminar_estados_de_error(self):
+        """
+        Elimina los estados de error del autómata.
+        Un estado de error es aquel que no es final y todas sus transiciones apuntan a sí mismo.
+        """
         estados_a_eliminar = []
-        for estado in self.estados:
+        for estado in self.estados.copy():
             transiciones = self.transiciones.get(estado, {})
-            # Verificar si todas las transiciones llevan al mismo estado (estado de error)
             destinos = list(transiciones.values())
-            if destinos and all(destino == estado for destino in destinos if destino is not None and destino != '-'):
-                # Además, asegurarse de que el estado no sea final
+            # Verificar si todas las transiciones llevan al mismo estado y que no sea final
+            if transiciones and all(destino == estado for destino in destinos if destino):
                 if estado not in self.estados_finales:
                     estados_a_eliminar.append(estado)
-        
+
         # Eliminar los estados de error
         for estado in estados_a_eliminar:
             self.estados.remove(estado)
             del self.transiciones[estado]
             # Eliminar transiciones hacia el estado eliminado
             for est, trans in self.transiciones.items():
-                for simbolo, destino in trans.items():
-                    if destino == estado:
-                        trans[simbolo] = '-'  # Reemplazar None con '-'
-                    elif isinstance(destino, list) and estado in destino:
-                        trans[simbolo].remove(estado)
-                        if not trans[simbolo]:
-                            trans[simbolo] = '-'
+                # Hacer una lista de las claves para evitar modificar el diccionario mientras se itera
+                for simbolo, destino in list(trans.items()):
+                    if isinstance(destino, list):
+                        if estado in destino:
+                            trans[simbolo].remove(estado)
+                            # Si después de la eliminación, la lista queda vacía, eliminar la transición
+                            if not trans[simbolo]:
+                                del trans[simbolo]
+                    elif destino == estado:
+                        del trans[simbolo]
         return estados_a_eliminar
 
     def convertir_a_deterministico(self):

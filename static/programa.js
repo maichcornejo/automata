@@ -89,7 +89,7 @@ function enviarAutomata() {
         }
 
         if (valor === '' || valor === '-') {
-            transiciones[estado][simbolo] = '-'; // Representar transiciones inexistentes
+            transiciones[estado][simbolo] = null; // Representar transiciones inexistentes
         } else {
             // Mantener transiciones como lista si son múltiples, o como cadena si es única
             const destinos = valor.split(',').map(v => v.trim()).filter(v => v !== '');

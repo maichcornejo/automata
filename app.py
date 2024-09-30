@@ -38,10 +38,10 @@ def submit_automata():
                     if len(destino) != len(set(destino)):
                         errores.append(f"El estado '{estado}' con el símbolo '{simbolo}' tiene estados destino duplicados: {', '.join(destino)}.")
                     for d in destino:
-                        if d and d not in estados and d != '-':
+                        if d and d not in estados:
                             errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
                 else:
-                    if destino and destino not in estados and destino != '-':
+                    if destino and destino not in estados:
                         errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{destino}'.")
 
         if errores:
@@ -147,7 +147,7 @@ def generar_tabla_transiciones(automata):
         tabla_html += f"<tr><td>{estado_str}</td>"
         for simbolo in automata.alfabeto:
             destino = automata.obtener_transiciones(estado, simbolo)
-            if destino == '-' or destino is None:
+            if destino is None:
                 destino_str = '-'  # Representar transiciones inexistentes
             elif isinstance(destino, list):
                 destino_str = ', '.join(destino) if destino else '-'
@@ -181,11 +181,11 @@ def graficar_automata(automata, deterministic=False):
     for estado, transiciones_estado in automata.transiciones.items():
         estado_str = estado
         for simbolo, destino in transiciones_estado.items():
-            if destino == '-' or destino is None:
+            if destino is None:
                 continue  # No añadir transiciones inexistentes
             if isinstance(destino, list):
                 for d in destino:
-                    if d and d != "-": 
+                    if d and d != "-":
                         dot.edge(estado_str, d, label=simbolo)
             elif isinstance(destino, str) and destino.strip():
                 dot.edge(estado_str, destino, label=simbolo)
