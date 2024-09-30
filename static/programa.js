@@ -36,7 +36,7 @@ function generarTablaTransiciones() {
     }
 
     if (!estados_unicos.has(estado_inicial)) {
-        errores.push("El estado inicial debe pertenecer a los estados ingresados.");
+        errores.push("El estado inicial debe ser único.");
     }
 
     estados_finales.forEach(estado => {

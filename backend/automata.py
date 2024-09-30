@@ -63,7 +63,7 @@ class Automata:
         """
         estados_a_eliminar = set()
 
-        # Identificar estados de error utilizando búsqueda de cierre
+        # Encuentra los estados de error 
         for estado in self.estados.copy():
             if estado not in self.estados_finales:
                 if not self.puede_reach_final(estado):
@@ -72,19 +72,19 @@ class Automata:
         if not estados_a_eliminar:
             return []
 
-        # Eliminar los estados de error
+        # Los elimina
         for estado in estados_a_eliminar:
             self.estados.remove(estado)
             del self.transiciones[estado]
 
-        # Eliminar transiciones hacia los estados eliminados
+        # Elimina transiciones hacia los estados eliminados
         for est, trans in self.transiciones.items():
             for simbolo in list(trans.keys()):
                 destinos = trans[simbolo]
                 if isinstance(destinos, list):
                     # Filtrar los destinos que han sido eliminados
                     trans[simbolo] = [d for d in destinos if d not in estados_a_eliminar]
-                    # Si la lista queda vacía, eliminar la transición
+                    # Si la lista queda vacía elimina la transición
                     if not trans[simbolo]:
                         del trans[simbolo]
                 else:
@@ -126,7 +126,6 @@ class Automata:
         nuevos_estados = []
         nuevas_transiciones = {}
         nuevos_estados_finales = set()
-        # estado_componentes = {}
 
         conjunto_inicial = frozenset([self.estado_inicial])
         nuevos_estados.append(conjunto_inicial)
