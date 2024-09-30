@@ -63,28 +63,27 @@ class Automata:
         """
         estados_a_eliminar = set()
 
-        # Identificar estados de error utilizando búsqueda de cierre
+        # Busqueda de cierre para encontrar los estados de error
         for estado in self.estados.copy():
             if estado not in self.estados_finales:
-                if not self.puede_reach_final(estado):
+                if not self.puede_encontrar_final(estado):
                     estados_a_eliminar.add(estado)
 
         if not estados_a_eliminar:
             return []
 
-        # Eliminar los estados de error
+        # Aca se eliminan los estados de error
         for estado in estados_a_eliminar:
             self.estados.remove(estado)
             del self.transiciones[estado]
 
-        # Eliminar transiciones hacia los estados eliminados
+        # Elimina transiciones hacia los E.E
         for est, trans in self.transiciones.items():
             for simbolo in list(trans.keys()):
                 destino = trans[simbolo]
                 if isinstance(destino, list):
-                    # Filtrar los destinos que han sido eliminados
                     trans[simbolo] = [d for d in destino if d not in estados_a_eliminar]
-                    # Si la lista queda vacía, eliminar la transición
+                    # Si la lista queda vacía se elimina la transicion
                     if not trans[simbolo]:
                         del trans[simbolo]
                 else:
@@ -93,7 +92,7 @@ class Automata:
 
         return list(estados_a_eliminar)
 
-    def puede_reach_final(self, estado):
+    def puede_encontrar_final(self, estado):
         """
         Verifica si desde el estado dado es posible alcanzar algún estado final.
         Utiliza una búsqueda en profundidad (DFS).
@@ -125,7 +124,7 @@ class Automata:
         nuevos_estados = []
         nuevas_transiciones = {}
         nuevos_estados_finales = set()
-        estado_componentes = {}
+        # estado_componentes = {}
 
         conjunto_inicial = frozenset([self.estado_inicial])
         nuevos_estados.append(conjunto_inicial)

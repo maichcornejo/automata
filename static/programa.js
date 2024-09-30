@@ -1,8 +1,6 @@
 function resetearFormulario() {
     // Reiniciar el formulario
     document.getElementById("automataForm").reset();
-
-    // Ocultar secciones de transiciones, resultados y validación
     document.getElementById("transiciones_container").style.display = "none";
     document.getElementById("resultados").innerHTML = "";
     document.getElementById("mensaje_deterministico").style.display = "none";
@@ -12,7 +10,6 @@ function resetearFormulario() {
 }
 
 function generarTablaTransiciones() {
-    // Borrar resultados previos antes de generar nueva tabla
     document.getElementById("resultados").innerHTML = "";
     document.getElementById("mensaje_deterministico").style.display = "none";
     document.getElementById("deterministic_button").style.display = "none";
@@ -89,9 +86,9 @@ function enviarAutomata() {
         }
 
         if (valor === '' || valor === '-') {
-            transiciones[estado][simbolo] = null; // Representar transiciones inexistentes
+            transiciones[estado][simbolo] = null; // Transiciones inexistentes
         } else {
-            // Mantener transiciones como lista si son múltiples, o como cadena si es única
+            // Mantengo transiciones como lista si son múltiples, o como cadena si es única
             const destinos = valor.split(',').map(v => v.trim()).filter(v => v !== '');
             transiciones[estado][simbolo] = destinos.length > 1 ? destinos : destinos[0];
         }
@@ -118,10 +115,10 @@ function enviarAutomata() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Mostrar la tabla de transiciones
+                // Tabla transiciones
                 document.getElementById("resultados").innerHTML = data.tabla;
 
-                // Mostrar el gráfico del autómata
+                // Grafico del automata
                 const grafico = document.createElement("img");
                 grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
                 document.getElementById("resultados").appendChild(grafico);
@@ -129,24 +126,21 @@ function enviarAutomata() {
                 console.error("Tabla o ruta del PNG no recibida.");
             }
 
-            // Mostrar el mensaje de si es determinístico o no
+            // Mensaje deterministico o no
             const esDeterministico = data.deterministico;
             document.getElementById("mensaje_deterministico").style.display = "block";
             document.getElementById("mensaje").innerText = esDeterministico
                 ? "El autómata es determinístico."
                 : "El autómata NO es determinístico.";
-
-            // Mostrar/ocultar el botón de conversión
             document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
 
-            // Mostrar el botón para eliminar estados de error si no es determinístico
             if (!esDeterministico) {
                 document.getElementById("eliminar_error_button").style.display = "block";
             } else {
                 document.getElementById("eliminar_error_button").style.display = "none";
             }
 
-            // Mostrar la sección de validación solo si es determinístico
+            // Muestra la validacion de cadenas solo cuando es deterministico
             document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
         })
         .catch(error => {
@@ -168,10 +162,10 @@ function convertirADeterministico() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Mostrar la tabla de transiciones
+                // Tabla transiciones
                 document.getElementById("resultados").innerHTML = data.tabla;
 
-                // Mostrar el gráfico del autómata determinístico
+                // Grafico auto. deterministico
                 const grafico = document.createElement("img");
                 grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
                 document.getElementById("resultados").appendChild(grafico);
@@ -179,15 +173,12 @@ function convertirADeterministico() {
                 console.error("Tabla o ruta del PNG no recibida.");
             }
 
-            // Mostrar el mensaje de conversión
             document.getElementById("mensaje_deterministico").style.display = "block";
             document.getElementById("mensaje").innerText = data.mensaje;
             document.getElementById("deterministic_button").style.display = "none";
 
-            // Ocultar el botón para eliminar estados de error
             document.getElementById("eliminar_error_button").style.display = "none";
 
-            // Mostrar la sección de validación
             document.getElementById("validacion_section").style.display = "block";
         })
         .catch(error => {
@@ -210,23 +201,20 @@ function eliminarEstadosError() {
         })
         .then(data => {
             if (data.tabla && data.png_path) {
-                // Mostrar la tabla de transiciones actualizada
+                // Transiciones actualizadas
                 document.getElementById("resultados").innerHTML = data.tabla;
 
-                // Mostrar el gráfico del autómata actualizado
+                // Automata actualizado
                 const grafico = document.createElement("img");
-                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                grafico.src = data.png_path + '?' + new Date().getTime();  
                 document.getElementById("resultados").appendChild(grafico);
             }
 
-            // Mostrar el mensaje de eliminación
             document.getElementById("mensaje_deterministico").style.display = "block";
             document.getElementById("mensaje").innerText = data.mensaje || "Estados de error eliminados correctamente.";
 
-            // Ocultar el botón para eliminar estados de error
             document.getElementById("eliminar_error_button").style.display = "none";
 
-            // Actualizar la visibilidad de botones según el estado determinístico
             const esDeterministico = data.deterministico;
             document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
             document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
