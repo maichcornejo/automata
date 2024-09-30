@@ -16,7 +16,7 @@ class Automata:
     def obtener_transiciones(self, estado, simbolo):
         if estado in self.transiciones and simbolo in self.transiciones[estado]:
             return self.transiciones[estado][simbolo]
-        return None  # Claramente devuelve None cuando no hay transición
+        return None
 
     def validar_cadena(self, cadena):
         if self.es_deterministico():
@@ -30,7 +30,7 @@ class Automata:
             if simbolo not in self.alfabeto:
                 return False
             transicion = self.obtener_transiciones(estado_actual, simbolo)
-            if not isinstance(transicion, str):  # Asegurar que sea una transición válida
+            if not isinstance(transicion, str):
                 return False
             estado_actual = transicion
         return estado_actual in self.estados_finales
@@ -57,37 +57,23 @@ class Automata:
         return validar_recursivo(self.estado_inicial, cadena)
 
     def convertir_a_deterministico(self):
-        nuevos_estados = []  # Lista de conjuntos de estados (en determinístico)
-        nuevas_transiciones = {}  # Transiciones del nuevo automata determinístico
-        nuevos_estados_finales = set()  # Conjunto de estados finales
-        estado_nombre_map = {}  # Mapeo de nombres de los nuevos estados
-        nombre_actual = len(self.estados)  # Empezar la numeración desde el último estado original
+        nuevos_estados = []
+        nuevas_transiciones = {}
+        nuevos_estados_finales = set()
+        estado_componentes = {}
 
-        def obtener_nombre_estado(conjunto):
-            conjunto_ordenado = frozenset(sorted(conjunto))
-            if conjunto_ordenado not in estado_nombre_map:
-                nonlocal nombre_actual
-                nombre_actual += 1
-                estado_nombre_map[conjunto_ordenado] = f"Q{nombre_actual}"
-            return estado_nombre_map[conjunto_ordenado]
-
-        # Estado inicial es el conjunto del estado inicial original
         conjunto_inicial = frozenset([self.estado_inicial])
-        obtener_nombre_estado(conjunto_inicial)
         nuevos_estados.append(conjunto_inicial)
-
-        # Procesar el conjunto inicial
         por_procesar = [conjunto_inicial]
 
         while por_procesar:
-            estado_actual = por_procesar.pop(0)  # Procesar el primer estado en la lista
-            nombre_estado_actual = obtener_nombre_estado(estado_actual)
-            nuevas_transiciones[nombre_estado_actual] = {}
+            estado_actual = por_procesar.pop(0)
+            estado_actual_str = '{' + ','.join(sorted(estado_actual)) + '}'  
+            nuevas_transiciones[estado_actual_str] = {}
 
             for simbolo in self.alfabeto:
                 nuevos_destinos = set()
 
-                # Combinar las transiciones de todos los estados del conjunto actual
                 for estado in estado_actual:
                     if simbolo in self.transiciones.get(estado, {}):
                         destinos = self.transiciones[estado][simbolo]
@@ -98,26 +84,24 @@ class Automata:
 
                 if nuevos_destinos:
                     nuevo_estado = frozenset(nuevos_destinos)
-                    nombre_nuevo_estado = obtener_nombre_estado(nuevo_estado)
+                    nuevo_estado_str = '{' + ','.join(sorted(nuevo_estado)) + '}'  # Mostrar conjunto de estados
 
-                    # Asignar la transición al nuevo estado
-                    nuevas_transiciones[nombre_estado_actual][simbolo] = nombre_nuevo_estado
+                    nuevas_transiciones[estado_actual_str][simbolo] = nuevo_estado_str
 
                     if nuevo_estado not in nuevos_estados:
                         nuevos_estados.append(nuevo_estado)
                         por_procesar.append(nuevo_estado)
 
-                    # Si el conjunto de nuevos estados contiene algún estado final, marcarlo como final
                     if nuevo_estado.intersection(self.estados_finales):
-                        nuevos_estados_finales.add(nombre_nuevo_estado)
+                        nuevos_estados_finales.add(nuevo_estado_str)
 
-        # Obtener la lista de estados renombrados
-        nuevos_estados_renombrados = list(estado_nombre_map.values())
+        nuevos_estados_str = ['{' + ','.join(sorted(estado)) + '}' for estado in nuevos_estados]
+        estado_inicial_str = '{' + self.estado_inicial + '}'
 
         return Automata(
-            estados=nuevos_estados_renombrados,
+            estados=nuevos_estados_str,
             alfabeto=self.alfabeto,
             transiciones=nuevas_transiciones,
-            estado_inicial=obtener_nombre_estado(conjunto_inicial),
+            estado_inicial=estado_inicial_str,
             estados_finales=list(nuevos_estados_finales)
-        )
+        ), {estado: list(componentes) for estado, componentes in zip(nuevos_estados_str, nuevos_estados)}

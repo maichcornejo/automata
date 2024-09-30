@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 from backend.automata import Automata
 import graphviz
+import os
 
 app = Flask(__name__)
 
-# Global variable to store the automata
+# Variable global para almacenar el autómata
 automata_global = None
 
 @app.route('/')
@@ -33,16 +34,14 @@ def submit_automata():
         # Validación: Verificar que todos los destinos de las transiciones existan y que no se repitan
         for estado, transiciones_estado in transiciones.items():
             for simbolo, destino in transiciones_estado.items():
-                # Verificar si destino es una lista (en caso de no determinismo)
                 if isinstance(destino, list):
-                    # Comprobar si hay duplicados en la lista de destinos
                     if len(destino) != len(set(destino)):
                         errores.append(f"El estado '{estado}' con el símbolo '{simbolo}' tiene estados destino duplicados: {', '.join(destino)}.")
                     for d in destino:
-                        if d and d not in estados:  
+                        if d and d not in estados:
                             errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{d}'.")
                 else:
-                    if destino and destino not in estados:  
+                    if destino and destino not in estados:
                         errores.append(f"La transición desde el estado '{estado}' con el símbolo '{simbolo}' apunta a un estado inexistente: '{destino}'.")
 
         if errores:
@@ -51,18 +50,26 @@ def submit_automata():
         # Crea una instancia de Automata (no determinístico)
         automata_global = Automata(estados, alfabeto, transiciones, estado_inicial, estados_finales)
         deterministico = automata_global.es_deterministico()
-        tabla_transiciones = generar_tabla_transiciones(automata_global)
-        graficar_automata(automata_global, deterministic=False)
 
-        # Enviar respuesta JSON con el mensaje de si es determinístico
-        mensaje = "El autómata es determinístico." if deterministico else "El autómata NO es determinístico."
+        # Generar la tabla de transiciones
+        tabla_transiciones = generar_tabla_transiciones(automata_global)
+
+        # Graficar el autómata (determinístico o no determinístico)
+        graficar_automata(automata_global, deterministic=deterministico)
+
+        # Determinar el nombre del archivo PNG
+        png_filename = 'automata_graph_deterministic.png' if deterministico else 'automata_graph.png'
+        png_path = f'/static/{png_filename}'
+
+        # Devolver la respuesta con la tabla y el gráfico
         return jsonify({
             'tabla': tabla_transiciones,
-            'mensaje': mensaje,
+            'png_path': png_path,  # Ruta del gráfico
+            'mensaje': "El autómata es determinístico." if deterministico else "El autómata NO es determinístico.",
             'deterministico': deterministico
         })
+
     except Exception as e:
-        # Capturar cualquier error y devolver un mensaje
         print(f"Error en submit_automata: {e}")
         return jsonify({'error': f"Error al procesar el autómata: {e}"}), 500
 
@@ -70,16 +77,28 @@ def submit_automata():
 @app.route('/convert_to_deterministic', methods=['POST'])
 def convert_to_deterministic():
     global automata_global
-    automata_deterministico = automata_global.convertir_a_deterministico()
-    tabla_transiciones = generar_tabla_transiciones(automata_deterministico)
-    graficar_automata(automata_deterministico, deterministic=True)
+    try:
+        if not automata_global:
+            return jsonify({'error': "El autómata no está definido."}), 400
 
-    return jsonify({
-        'tabla': tabla_transiciones,
-        'mensaje': "El autómata ha sido convertido a determinístico.",
-        'deterministico': True
-    })
+        automata_deterministico, _ = automata_global.convertir_a_deterministico()
+        tabla_transiciones = generar_tabla_transiciones(automata_deterministico)
+        graficar_automata(automata_deterministico, deterministic=True)
 
+        # Determinar el nombre del archivo PNG
+        png_filename = 'automata_graph_deterministic.png'
+        png_path = f'/static/{png_filename}'
+
+        # Enviar la información necesaria sin 'estados_componentes'
+        return jsonify({
+            'tabla': tabla_transiciones,
+            'png_path': png_path,  # Ruta del gráfico
+            'mensaje': "El autómata ha sido convertido a determinístico.",
+            'deterministico': True
+        })
+    except Exception as e:
+        print(f"Error en convert_to_deterministic: {e}")
+        return jsonify({'error': f"Error al convertir a determinístico: {e}"}), 500
 
 def generar_tabla_transiciones(automata):
     tabla_html = "<table border='1'><tr><th>Estado</th>"
@@ -92,7 +111,12 @@ def generar_tabla_transiciones(automata):
         tabla_html += f"<tr><td>{estado_str}</td>"
         for simbolo in automata.alfabeto:
             destino = automata.obtener_transiciones(estado, simbolo)
-            destino_str = ','.join(destino) if isinstance(destino, list) else destino if destino else '-'
+            if destino is None:
+                destino_str = '-'
+            elif isinstance(destino, list):
+                destino_str = ', '.join(destino) if destino else '-'
+            else:
+                destino_str = destino if destino else '-'
             tabla_html += f"<td>{destino_str}</td>"
         tabla_html += "</tr>"
 
@@ -121,13 +145,16 @@ def graficar_automata(automata, deterministic=False):
     for estado, transiciones_estado in automata.transiciones.items():
         estado_str = estado
         for simbolo, destino in transiciones_estado.items():
-            # Verificar si el destino es válido (ni vacío, ni nulo, ni "-")
             if isinstance(destino, list):
                 for d in destino:
                     if d and d != "-": 
-                        dot.edge(estado_str, d, label=simbolo)  # Dibuja una transición por cada destino
-            elif isinstance(destino, str) and destino.strip():  
+                        dot.edge(estado_str, d, label=simbolo)
+            elif isinstance(destino, str) and destino.strip():
                 dot.edge(estado_str, destino, label=simbolo)
+
+    # Asegurarse de que la carpeta 'static' exista
+    if not os.path.exists('static'):
+        os.makedirs('static')
 
     # Guardar el gráfico como PNG
     output_file = 'automata_graph_deterministic' if deterministic else 'automata_graph'
@@ -150,10 +177,11 @@ def validar_cadena():
             resultado = "El autómata no está definido."
 
         # Enviar el resultado de la validación al frontend
-        return jsonify({ 'resultado': resultado })
+        return jsonify({'resultado': resultado})
     except Exception as e:
         print(f"Error al validar la cadena: {e}")
-        return jsonify({ 'error': f"Error al validar la cadena: {e}" }), 500
-    
+        return jsonify({'error': f"Error al validar la cadena: {e}"}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

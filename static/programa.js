@@ -1,7 +1,7 @@
 function resetearFormulario() {
     // Reiniciar el formulario
     document.getElementById("automataForm").reset();
-    
+
     // Ocultar secciones de transiciones, resultados y validación
     document.getElementById("transiciones_container").style.display = "none";
     document.getElementById("resultados").innerHTML = "";
@@ -16,7 +16,7 @@ function generarTablaTransiciones() {
     document.getElementById("mensaje_deterministico").style.display = "none";
     document.getElementById("deterministic_button").style.display = "none";
     document.getElementById("validacion_section").style.display = "none";
-    
+
     const estados = document.getElementById("estados").value.split(',').map(e => e.trim());
     const alfabeto = document.getElementById("alfabeto").value.split(',').map(e => e.trim());
     const estado_inicial = document.getElementById("estado_inicial").value.trim();
@@ -78,7 +78,6 @@ function enviarAutomata() {
 
     const transiciones = {};
 
-    // Recoger las transiciones ingresadas en la tabla
     document.querySelectorAll("table input").forEach(input => {
         const [estado, simbolo] = input.name.split(',');
         const valor = input.value.trim();
@@ -86,10 +85,16 @@ function enviarAutomata() {
         if (!transiciones[estado]) {
             transiciones[estado] = {};
         }
-        transiciones[estado][simbolo] = valor.split(',').map(v => v.trim());
+
+        if (valor === '') {
+            transiciones[estado][simbolo] = null; // Manejar transiciones vacías
+        } else {
+            // Mantener transiciones como lista si son múltiples, o como cadena si es única
+            const destinos = valor.split(',').map(v => v.trim()).filter(v => v !== '');
+            transiciones[estado][simbolo] = destinos.length > 1 ? destinos : destinos[0];
+        }
     });
 
-    // Enviar los datos al backend
     fetch('/submit_automata', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,88 +106,107 @@ function enviarAutomata() {
             transiciones: transiciones
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.error);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        document.getElementById("resultados").innerHTML = data.tabla;
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.tabla && data.png_path) {
+                // Mostrar la tabla de transiciones
+                document.getElementById("resultados").innerHTML = data.tabla;
 
-        // Mostrar el gráfico del autómata
-        const grafico = document.createElement("img");
-        grafico.src = '/static/automata_graph.png?' + new Date().getTime(); 
-        document.getElementById("resultados").appendChild(grafico);
+                // Mostrar el gráfico del autómata
+                const grafico = document.createElement("img");
+                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                document.getElementById("resultados").appendChild(grafico);
+            } else {
+                console.error("Tabla o ruta del PNG no recibida.");
+            }
 
-        const esDeterministico = data.deterministico;
-        document.getElementById("mensaje_deterministico").style.display = "block";
-        document.getElementById("mensaje").innerText = esDeterministico 
-            ? "El autómata es determinístico." 
-            : "El autómata NO es determinístico.";
+            // Mostrar el mensaje de si es determinístico o no
+            const esDeterministico = data.deterministico;
+            document.getElementById("mensaje_deterministico").style.display = "block";
+            document.getElementById("mensaje").innerText = esDeterministico
+                ? "El autómata es determinístico."
+                : "El autómata NO es determinístico.";
 
-        document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
-        document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
-    })
-    .catch(error => {
-        alert("Error: " + error.message);
-    });
+            // Mostrar/ocultar el botón de conversión
+            document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
+            document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
+        })
+        .catch(error => {
+            alert("Error: " + error.message);
+        });
 }
 
 function convertirADeterministico() {
     fetch('/convert_to_deterministic', {
         method: 'POST'
     })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById("resultados").innerHTML = data.tabla;
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.tabla && data.png_path) {
+                // Mostrar la tabla de transiciones
+                document.getElementById("resultados").innerHTML = data.tabla;
 
-        // Mostrar el gráfico del autómata determinístico
-        const grafico = document.createElement("img");
-        grafico.src = '/static/automata_graph_deterministic.png?' + new Date().getTime(); 
-        document.getElementById("resultados").appendChild(grafico);
+                // Mostrar el gráfico del autómata determinístico
+                const grafico = document.createElement("img");
+                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                document.getElementById("resultados").appendChild(grafico);
+            } else {
+                console.error("Tabla o ruta del PNG no recibida.");
+            }
 
-        // Actualizar el mensaje y ocultar el botón de conversión
-        document.getElementById("mensaje_deterministico").style.display = "block";
-        document.getElementById("mensaje").innerText = data.mensaje;
-        document.getElementById("deterministic_button").style.display = "none";
+            // Mostrar el mensaje de conversión
+            document.getElementById("mensaje_deterministico").style.display = "block";
+            document.getElementById("mensaje").innerText = data.mensaje;
+            document.getElementById("deterministic_button").style.display = "none";
 
-        // Mostrar la opción para validar cadena
-        document.getElementById("validacion_section").style.display = "block";
-    })
-    .catch(error => {
-        console.error("Error al convertir a determinístico:", error);
-        alert("Error al convertir a determinístico: " + error.message);
-    });
+            // Mostrar la sección de validación
+            document.getElementById("validacion_section").style.display = "block";
+        })
+        .catch(error => {
+            console.error("Error al convertir a determinístico:", error);
+            alert("Error al convertir a determinístico: " + error.message);
+        });
 }
 
 function validarCadena() {
     const cadena = document.getElementById("cadena").value.trim();
-    
+
     fetch('/validar_cadena', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cadena: cadena })
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.error);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.resultado) {
-            document.getElementById("validacion_resultado").innerText = data.resultado;
-        } else {
-            document.getElementById("validacion_resultado").innerText = "No se obtuvo respuesta de la validación.";
-        }
-    })
-    .catch(error => {
-        console.error("Error al validar la cadena:", error);
-        document.getElementById("validacion_resultado").innerText = "Error al validar la cadena: " + error.message;
-    });
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.resultado) {
+                document.getElementById("validacion_resultado").innerText = data.resultado;
+            } else {
+                document.getElementById("validacion_resultado").innerText = "No se obtuvo respuesta de la validación.";
+            }
+        })
+        .catch(error => {
+            console.error("Error al validar la cadena:", error);
+            document.getElementById("validacion_resultado").innerText = "Error al validar la cadena: " + error.message;
+        });
 }
