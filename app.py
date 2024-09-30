@@ -135,6 +135,10 @@ def eliminar_estados_error():
         print(f"Error en eliminar_estados_error: {e}")
         return jsonify({'error': f"Error al eliminar estados de error: {e}"}), 500
 
+    except Exception as e:
+        print(f"Error en eliminar_estados_error: {e}")
+        return jsonify({'error': f"Error al eliminar estados de error: {e}"}), 500
+
 
 def generar_tabla_transiciones(automata):
     tabla_html = "<table border='1'><tr><th>Estado</th>"

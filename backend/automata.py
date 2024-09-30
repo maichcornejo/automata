@@ -58,35 +58,68 @@ class Automata:
 
     def eliminar_estados_de_error(self):
         """
-        Elimina los estados de error del autómata.
-        Un estado de error es aquel que no es final y todas sus transiciones apuntan a sí mismo.
+        Elimina todos los estados de error del autómata.
+        Un estado de error es aquel que no es final y desde el cual no es posible llegar a ningún estado final.
         """
-        estados_a_eliminar = []
+        estados_a_eliminar = set()
+
+        # Identificar estados de error utilizando búsqueda de cierre
         for estado in self.estados.copy():
-            transiciones = self.transiciones.get(estado, {})
-            destinos = list(transiciones.values())
-            # Verificar si todas las transiciones llevan al mismo estado y que no sea final
-            if transiciones and all(destino == estado for destino in destinos if destino):
-                if estado not in self.estados_finales:
-                    estados_a_eliminar.append(estado)
+            if estado not in self.estados_finales:
+                if not self.puede_reach_final(estado):
+                    estados_a_eliminar.add(estado)
+
+        if not estados_a_eliminar:
+            return []
 
         # Eliminar los estados de error
         for estado in estados_a_eliminar:
             self.estados.remove(estado)
             del self.transiciones[estado]
-            # Eliminar transiciones hacia el estado eliminado
-            for est, trans in self.transiciones.items():
-                # Hacer una lista de las claves para evitar modificar el diccionario mientras se itera
-                for simbolo, destino in list(trans.items()):
-                    if isinstance(destino, list):
-                        if estado in destino:
-                            trans[simbolo].remove(estado)
-                            # Si después de la eliminación, la lista queda vacía, eliminar la transición
-                            if not trans[simbolo]:
-                                del trans[simbolo]
-                    elif destino == estado:
+
+        # Eliminar transiciones hacia los estados eliminados
+        for est, trans in self.transiciones.items():
+            for simbolo in list(trans.keys()):
+                destino = trans[simbolo]
+                if isinstance(destino, list):
+                    # Filtrar los destinos que han sido eliminados
+                    trans[simbolo] = [d for d in destino if d not in estados_a_eliminar]
+                    # Si la lista queda vacía, eliminar la transición
+                    if not trans[simbolo]:
                         del trans[simbolo]
-        return estados_a_eliminar
+                else:
+                    if destino in estados_a_eliminar:
+                        del trans[simbolo]
+
+        return list(estados_a_eliminar)
+
+    def puede_reach_final(self, estado):
+        """
+        Verifica si desde el estado dado es posible alcanzar algún estado final.
+        Utiliza una búsqueda en profundidad (DFS).
+        """
+        stack = [estado]
+        visitados = set()
+
+        while stack:
+            current = stack.pop()
+            if current in visitados:
+                continue
+            visitados.add(current)
+
+            if current in self.estados_finales:
+                return True
+
+            for simbolo, destinos in self.transiciones.get(current, {}).items():
+                if isinstance(destinos, list):
+                    for destino in destinos:
+                        if destino not in visitados:
+                            stack.append(destino)
+                else:
+                    if destinos not in visitados:
+                        stack.append(destinos)
+
+        return False
 
     def convertir_a_deterministico(self):
         nuevos_estados = []
