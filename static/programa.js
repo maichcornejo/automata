@@ -7,6 +7,7 @@ function resetearFormulario() {
     document.getElementById("resultados").innerHTML = "";
     document.getElementById("mensaje_deterministico").style.display = "none";
     document.getElementById("deterministic_button").style.display = "none";
+    document.getElementById("eliminar_error_button").style.display = "none";
     document.getElementById("validacion_section").style.display = "none";
 }
 
@@ -15,6 +16,7 @@ function generarTablaTransiciones() {
     document.getElementById("resultados").innerHTML = "";
     document.getElementById("mensaje_deterministico").style.display = "none";
     document.getElementById("deterministic_button").style.display = "none";
+    document.getElementById("eliminar_error_button").style.display = "none";
     document.getElementById("validacion_section").style.display = "none";
 
     const estados = document.getElementById("estados").value.split(',').map(e => e.trim());
@@ -59,7 +61,7 @@ function generarTablaTransiciones() {
     estados.forEach(estado => {
         tablaHtml += `<tr><td>${estado}</td>`;
         alfabeto.forEach(simbolo => {
-            tablaHtml += `<td><input type='text' name='${estado},${simbolo}'></td>`;
+            tablaHtml += `<td><input type='text' name='${estado},${simbolo}' placeholder='-'></td>`;
         });
         tablaHtml += "</tr>";
     });
@@ -86,8 +88,8 @@ function enviarAutomata() {
             transiciones[estado] = {};
         }
 
-        if (valor === '') {
-            transiciones[estado][simbolo] = null; // Manejar transiciones vacías
+        if (valor === '' || valor === '-') {
+            transiciones[estado][simbolo] = '-'; // Representar transiciones inexistentes
         } else {
             // Mantener transiciones como lista si son múltiples, o como cadena si es única
             const destinos = valor.split(',').map(v => v.trim()).filter(v => v !== '');
@@ -136,6 +138,15 @@ function enviarAutomata() {
 
             // Mostrar/ocultar el botón de conversión
             document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
+
+            // Mostrar el botón para eliminar estados de error si no es determinístico
+            if (!esDeterministico) {
+                document.getElementById("eliminar_error_button").style.display = "block";
+            } else {
+                document.getElementById("eliminar_error_button").style.display = "none";
+            }
+
+            // Mostrar la sección de validación solo si es determinístico
             document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
         })
         .catch(error => {
@@ -173,12 +184,56 @@ function convertirADeterministico() {
             document.getElementById("mensaje").innerText = data.mensaje;
             document.getElementById("deterministic_button").style.display = "none";
 
+            // Ocultar el botón para eliminar estados de error
+            document.getElementById("eliminar_error_button").style.display = "none";
+
             // Mostrar la sección de validación
             document.getElementById("validacion_section").style.display = "block";
         })
         .catch(error => {
             console.error("Error al convertir a determinístico:", error);
             alert("Error al convertir a determinístico: " + error.message);
+        });
+}
+
+function eliminarEstadosError() {
+    fetch('/eliminar_estados_error', {
+        method: 'POST'
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error en la solicitud');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.tabla && data.png_path) {
+                // Mostrar la tabla de transiciones actualizada
+                document.getElementById("resultados").innerHTML = data.tabla;
+
+                // Mostrar el gráfico del autómata actualizado
+                const grafico = document.createElement("img");
+                grafico.src = data.png_path + '?' + new Date().getTime();  // Cache-busting con timestamp
+                document.getElementById("resultados").appendChild(grafico);
+            }
+
+            // Mostrar el mensaje de eliminación
+            document.getElementById("mensaje_deterministico").style.display = "block";
+            document.getElementById("mensaje").innerText = data.mensaje || "Estados de error eliminados correctamente.";
+
+            // Ocultar el botón para eliminar estados de error
+            document.getElementById("eliminar_error_button").style.display = "none";
+
+            // Actualizar la visibilidad de botones según el estado determinístico
+            const esDeterministico = data.deterministico;
+            document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
+            document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
+        })
+        .catch(error => {
+            console.error("Error al eliminar estados de error:", error);
+            alert("Error al eliminar estados de error: " + error.message);
         });
 }
 
