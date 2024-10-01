@@ -1,5 +1,6 @@
 class Automata:
     def __init__(self, estados, alfabeto, transiciones, estado_inicial, estados_finales):
+        #Inicia constructor
         self.estados = estados
         self.alfabeto = alfabeto
         self.transiciones = transiciones
@@ -57,16 +58,12 @@ class Automata:
         return validar_recursivo(self.estado_inicial, cadena)
 
     def eliminar_estados_de_error(self):
-        """
-        Elimina todos los estados de error del autómata.
-        Un estado de error es aquel que no es final y desde el cual no es posible llegar a ningún estado final.
-        """
         estados_a_eliminar = set()
 
         # Encuentra los estados de error 
         for estado in self.estados.copy():
             if estado not in self.estados_finales:
-                if not self.puede_reach_final(estado):
+                if not self.encuentra_estado_final(estado):
                     estados_a_eliminar.add(estado)
 
         if not estados_a_eliminar:
@@ -82,9 +79,7 @@ class Automata:
             for simbolo in list(trans.keys()):
                 destinos = trans[simbolo]
                 if isinstance(destinos, list):
-                    # Filtrar los destinos que han sido eliminados
                     trans[simbolo] = [d for d in destinos if d not in estados_a_eliminar]
-                    # Si la lista queda vacía elimina la transición
                     if not trans[simbolo]:
                         del trans[simbolo]
                 else:
@@ -93,11 +88,9 @@ class Automata:
 
         return list(estados_a_eliminar)
 
-    def puede_reach_final(self, estado):
-        """
-        Verifica si desde el estado dado es posible alcanzar algún estado final.
-        Utiliza una búsqueda en profundidad (DFS).
-        """
+    def encuentra_estado_final(self, estado):
+       # Verifica si desde el estado dado es posible alcanzar algún estado final
+
         stack = [estado]
         visitados = set()
 

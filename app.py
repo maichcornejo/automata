@@ -47,7 +47,7 @@ def submit_automata():
         if errores:
             return jsonify({'error': "\n".join(errores)}), 400
 
-        # Instancia auto. no determins.
+        # Instancia el automata no det.
         automata_global = Automata(estados, alfabeto, transiciones, estado_inicial, estados_finales)
         deterministico = automata_global.es_deterministico()
 
@@ -55,14 +55,13 @@ def submit_automata():
         tabla_transiciones = generar_tabla_transiciones(automata_global)
         graficar_automata(automata_global, deterministic=deterministico)
 
-        # Determinar el nombre del archivo PNG
         png_filename = 'automata_graph_deterministico.png' if deterministico else 'automata_graph.png'
         png_path = f'/static/{png_filename}'
 
         # Devolver la respuesta con la tabla y el gráfico
         return jsonify({
             'tabla': tabla_transiciones,
-            'png_path': png_path,  # Ruta del gráfico
+            'png_path': png_path, 
             'mensaje': "El autómata es determinístico." if deterministico else "El autómata NO es determinístico.",
             'deterministico': deterministico
         })
@@ -85,10 +84,9 @@ def contertir_en_deterministico():
         png_filename = 'automata_graph_deterministico.png'
         png_path = f'/static/{png_filename}'
 
-        # Enviar la información necesaria sin 'estados_componentes'
         return jsonify({
             'tabla': tabla_transiciones,
-            'png_path': png_path,  # Ruta del gráfico
+            'png_path': png_path, 
             'mensaje': "El autómata ha sido convertido a determinístico.",
             'deterministico': True
         })
@@ -108,13 +106,10 @@ def eliminar_estados_error():
         if not estados_eliminados:
             return jsonify({'mensaje': "No se encontraron estados de error para eliminar."})
 
-        # Generar la tabla de transiciones actualizada
+        # Generar la tabla de transiciones y el grafico actualizados
         tabla_transiciones = generar_tabla_transiciones(automata_global)
-
-        # Graficar el autómata actualizado
         graficar_automata(automata_global, deterministic=automata_global.es_deterministico())
 
-        # Determinar el nombre del archivo PNG
         deterministico = automata_global.es_deterministico()
         png_filename = 'automata_graph_deterministico.png' if deterministico else 'automata_graph.png'
         png_path = f'/static/{png_filename}'
@@ -122,7 +117,7 @@ def eliminar_estados_error():
         # Devolver la respuesta con la tabla y el gráfico
         return jsonify({
             'tabla': tabla_transiciones,
-            'png_path': png_path,  # Ruta del gráfico
+            'png_path': png_path,  
             'mensaje': f"Se han eliminado los siguientes estados de error: {', '.join(estados_eliminados)}.",
             'deterministico': deterministico
         })
@@ -144,7 +139,7 @@ def generar_tabla_transiciones(automata):
         for simbolo in automata.alfabeto:
             destinos = automata.obtener_transiciones(estado, simbolo)
             if not destinos:
-                destino_str = '-'  # Representar transiciones inexistentes
+                destino_str = '-'  # Representa transiciones inexistentes
             elif isinstance(destinos, list):
                 destino_str = ', '.join(destinos) if destinos else '-'
             else:
@@ -173,7 +168,7 @@ def graficar_automata(automata, deterministic=False):
     dot.node('', shape='none')
     dot.edge('', estado_inicial_str)
 
-    # Añadir las transiciones, solo si hay un destino válido
+    # Añadir las transiciones
     for estado, transiciones_estado in automata.transiciones.items():
         estado_str = estado
         for simbolo, destinos in transiciones_estado.items():

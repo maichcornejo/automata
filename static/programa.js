@@ -132,17 +132,14 @@ function enviarAutomata() {
                 ? "El autómata es determinístico."
                 : "El autómata NO es determinístico.";
 
-            // Mostrar/ocultar el botón de conversión
             document.getElementById("deterministic_button").style.display = esDeterministico ? "none" : "block";
 
-            // Mostrar el botón para eliminar estados de error si no es determinístico
             if (!esDeterministico) {
                 document.getElementById("eliminar_error_button").style.display = "block";
             } else {
                 document.getElementById("eliminar_error_button").style.display = "none";
             }
 
-            // Mostrar la sección de validación solo si es determinístico
             document.getElementById("validacion_section").style.display = esDeterministico ? "block" : "none";
         })
         .catch(error => {
